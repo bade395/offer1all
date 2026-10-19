@@ -87,10 +87,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         items.forEach((item, index) => {
             const qty = parseNum(item.quantity, false);
-            const dur = parseNum(item.duration, false);
             const price = parseNum(item.rentalPrice, true);
             
-            const lineTotal = qty * dur * price;
+            const lineTotal = qty * price;
             const lineVat = lineTotal * 0.15;
             const lineGrand = lineTotal + lineVat;
 
@@ -104,9 +103,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (row) {
-                row.cells[5].innerHTML = lineTotal > 0 ? formatMoney(lineTotal, 2) : '0.00';
-                row.cells[6].innerHTML = lineVat > 0 ? formatMoney(lineVat, 2) : '0.00';
-                row.cells[7].innerHTML = lineGrand > 0 ? formatMoney(lineGrand, 2) : '0.00';
+                row.cells[4].innerHTML = lineTotal > 0 ? formatMoney(lineTotal, 2) : '0.00';
+                row.cells[5].innerHTML = lineVat > 0 ? formatMoney(lineVat, 2) : '0.00';
+                row.cells[6].innerHTML = lineGrand > 0 ? formatMoney(lineGrand, 2) : '0.00';
             }
         });
 
@@ -117,38 +116,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function buildRowHtml(item, index) {
         const qty = parseNum(item.quantity, false);
-        const dur = parseNum(item.duration, false);
         const price = parseNum(item.rentalPrice, true);
-        const lineTotal = qty * dur * price;
+        const lineTotal = qty * price;
         const lineVat = lineTotal * 0.15;
         const lineGrand = lineTotal + lineVat;
 
-        let carFieldHtml = '';
-        if (item.isCustom) {
-            carFieldHtml = `
-                <div class="custom-car-input-group">
-                    <input type="text" class="editable-field table-input car-type-input" value="${item.carType}" data-index="${index}" data-key="carType" placeholder="أدخل اسم السيارة">
-                    <button type="button" class="btn-toggle-select no-print" data-index="${index}" title="العودة للقائمة المنسدلة">↺</button>
-                </div>
-            `;
-        } else {
-            const optionsHtml = CAR_OPTIONS.map(car => `<option value="${car}" ${item.carType === car ? 'selected' : ''}>${car}</option>`).join('');
-            carFieldHtml = `
-                <select class="table-select car-type-select" data-index="${index}" data-key="carType">
-                    ${optionsHtml}
-                    <option value="__custom__">✏️ كتابة اسم سيارة جديد (يدوي)...</option>
-                </select>
-            `;
-        }
+        const carFieldHtml = `
+            <textarea rows="2" class="editable-field table-input statement-input" data-index="${index}" data-key="carType" placeholder="اكتب البيان">${item.carType || ''}</textarea>
+        `;
 
         return `
             <td>${carFieldHtml}</td>
             <td>
                 <input type="text" inputmode="numeric" class="editable-field table-input" value="${item.quantity}" data-index="${index}" data-key="quantity" placeholder="0">
             </td>
-            <td>
-                <input type="text" inputmode="numeric" class="editable-field table-input" value="${item.duration}" data-index="${index}" data-key="duration" placeholder="0">
-            </td>
+            
             <td>
                 <select class="table-select" data-index="${index}" data-key="typeOfRent">
                     <option value="Yearly / سنوي" ${item.typeOfRent === 'Yearly / سنوي' ? 'selected' : ''}>Yearly / سنوي</option>
@@ -162,9 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <td class="total-cell">${lineTotal > 0 ? formatMoney(lineTotal, 2) : '0.00'}</td>
             <td class="total-cell">${lineVat > 0 ? formatMoney(lineVat, 2) : '0.00'}</td>
             <td class="total-cell">${lineGrand > 0 ? formatMoney(lineGrand, 2) : '0.00'}</td>
-            <td>
-                <input type="text" inputmode="decimal" class="editable-field table-input" value="${item.extraKmPrice || ''}" data-index="${index}" data-key="extraKmPrice" placeholder="0.00">
-            </td>
+            
             <td class="no-print row-action-col">
                 ${items.length > 1 ? `<button type="button" class="btn-del-row" data-index="${index}">×</button>` : ''}
             </td>
@@ -201,6 +181,10 @@ document.addEventListener('DOMContentLoaded', () => {
             tableSection1.after(summaryAndStampBlock);
         }
 
+        document.querySelectorAll('.statement-input').forEach(field => {
+            field.style.height = 'auto';
+            field.style.height = Math.max(42, field.scrollHeight) + 'px';
+        });
         updateTotals();
         attachInputListeners();
     }
@@ -221,6 +205,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 items[idx][key] = rawVal;
+                if (e.target.classList.contains('statement-input')) {
+                    e.target.style.height = 'auto';
+                    e.target.style.height = Math.max(42, e.target.scrollHeight) + 'px';
+                }
                 updateTotals();
             });
         });
@@ -394,9 +382,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function calculateQuoteTotals() {
         return items.reduce((totals, item) => {
             const qty = parseNum(item.quantity, false);
-            const dur = parseNum(item.duration, false);
             const price = parseNum(item.rentalPrice, true);
-            const net = qty * dur * price;
+            const net = qty * price;
             const vat = net * 0.15;
             totals.net += net;
             totals.vat += vat;
