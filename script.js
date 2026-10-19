@@ -691,7 +691,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 replacement.className = area.id === 'terms-ar' ? 'terms-print-text ar-box' : 'terms-print-text en-box';
                 replacement.textContent = area.value || '';
                 replacement.dir = area.id === 'terms-ar' ? 'rtl' : 'ltr';
-                replacement.style.cssText = 'display:block;width:100%;min-height:60px;height:auto;box-sizing:border-box;white-space:pre-wrap;overflow:visible;overflow-wrap:anywhere;font-size:0.75rem;line-height:1.5;padding:4px;text-align:' + (area.id === 'terms-ar' ? 'right' : 'left') + ';font-family:Tajawal,Arial,sans-serif;font-weight:500;direction:' + (area.id === 'terms-ar' ? 'rtl' : 'ltr') + ';unicode-bidi:plaintext;color:#111;background:transparent;border:0;';
+                replacement.style.cssText = 'display:block;width:100%;min-height:60px;height:auto;box-sizing:border-box;white-space:pre-wrap;overflow:visible;overflow-wrap:anywhere;font-size:0.75rem;line-height:1.5;padding:4px;text-align:' + (area.id === 'terms-ar' ? 'right' : 'left') + ';font-family:Tajawal,Arial,sans-serif;font-weight:500;direction:' + (area.id === 'terms-ar' ? 'rtl' : 'ltr') + ';unicode-bidi:normal;color:#111;background:transparent;border:0;';
                 area.replaceWith(replacement);
             });
         };
@@ -727,6 +727,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     title.style.setProperty('text-align', 'center', 'important');
                     title.style.setProperty('text-align-last', 'center', 'important');
                     title.style.setProperty('letter-spacing', 'normal', 'important');
+                });
+                // Center the recipient company name in the row next to "السادة /".
+                clone.querySelectorAll('.client-row').forEach(row => {
+                    row.style.setProperty('display', 'flex', 'important');
+                    row.style.setProperty('align-items', 'center', 'important');
+                    row.style.setProperty('width', '100%', 'important');
+                });
+                clone.querySelectorAll('.client-input').forEach(input => {
+                    input.style.setProperty('text-align', 'center', 'important');
+                    input.style.setProperty('text-align-last', 'center', 'important');
+                    input.style.setProperty('direction', 'rtl', 'important');
+                    input.style.setProperty('font-family', 'Tajawal, Arial, sans-serif', 'important');
                 });
                 stage.appendChild(clone);
                 await waitForImages(clone);
