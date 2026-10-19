@@ -767,7 +767,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     windowWidth:A4_WIDTH_PX, windowHeight:A4_HEIGHT_PX,
                     x:0, y:0, scrollX:0, scrollY:0,
                     useCORS:true, allowTaint:false, backgroundColor:'#ffffff',
-                    foreignObjectRendering:true,
                     imageTimeout:15000, logging:false, removeContainer:true
                 });
                 if (i > 0) pdf.addPage('a4', 'portrait');
