@@ -788,40 +788,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     dateText.textContent = sourcePage.querySelector('#quote-date')?.value ?? dateInput.value ?? '';
                     dateInput.replaceWith(dateText);
                 }
-                // Render statement text as a normal wrapping block in the PDF only.
-                // Read typography from the live source field (not the detached clone) to preserve Arabic glyph shaping.
-                clone.querySelectorAll('textarea.statement-input').forEach((area, fieldIndex) => {
-                    const sourceField = sourcePage.querySelectorAll('textarea.statement-input')[fieldIndex];
-                    const sourceStyle = sourceField ? window.getComputedStyle(sourceField) : null;
-                    const replacement = document.createElement('div');
-                    replacement.className = 'statement-print-text';
-                    replacement.textContent = area.value || '';
-                    replacement.setAttribute('dir', sourceField?.getAttribute('dir') || 'rtl');
-                    replacement.style.cssText = [
-                        'display:block',
-                        'width:100%',
-                        'box-sizing:border-box',
-                        'min-height:22px',
-                        'height:auto',
-                        'overflow:visible',
-                        'white-space:pre-wrap',
-                        'overflow-wrap:anywhere',
-                        'word-break:normal',
-                        'direction:' + (sourceStyle?.direction || 'rtl'),
-                        'text-align:' + (sourceStyle?.textAlign || 'right'),
-                        'font-family:' + (sourceStyle?.fontFamily || 'Tajawal, Arial, sans-serif'),
-                        'font-size:' + (sourceStyle?.fontSize || 'inherit'),
-                        'font-weight:' + (sourceStyle?.fontWeight || '400'),
-                        'line-height:' + (sourceStyle?.lineHeight || '1.3'),
-                        'letter-spacing:' + (sourceStyle?.letterSpacing || 'normal'),
-                        'padding:' + (sourceStyle?.padding || '0 2px'),
-                        'color:#111',
-                        'background:transparent',
-                        'border:0'
-                    ].join(';') + ';';
-                    area.replaceWith(replacement);
-                });
-
                 // Lock the company title to the page center in the actual export clone.
                 clone.querySelectorAll('.company-brand').forEach(brand => {
                     brand.style.setProperty('width', '100%', 'important');
@@ -852,6 +818,64 @@ document.addEventListener('DOMContentLoaded', () => {
                 await waitForImages(clone);
                 await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
+                // Render statement text like the Arabic terms: use a shaped canvas and wrap to the real cell width.
+                clone.querySelectorAll('textarea.statement-input').forEach((area, fieldIndex) => {
+                    const sourceField = sourcePage.querySelectorAll('textarea.statement-input')[fieldIndex];
+                    const style = window.getComputedStyle(sourceField || area);
+                    const value = sourceField ? sourceField.value : (area.value || '');
+                    const logicalWidth = Math.max(80, Math.floor(area.getBoundingClientRect().width || area.parentElement?.getBoundingClientRect().width || 330));
+                    const fontSize = parseFloat(style.fontSize) || 14;
+                    const lineHeight = Math.max(fontSize * 1.25, parseFloat(style.lineHeight) || fontSize * 1.3);
+                    const ratio = 2, pad = 4;
+                    const canvas = document.createElement('canvas');
+                    let ctx = canvas.getContext('2d');
+                    const font = style.font || (style.fontWeight + ' ' + fontSize + 'px ' + style.fontFamily);
+                    const direction = style.direction || 'rtl';
+                    const align = (direction === 'ltr' || style.textAlign === 'left') ? 'left' : 'right';
+                    ctx.font = font;
+                    const maxWidth = logicalWidth - pad * 2;
+                    const lines = [];
+                    value.split(/\\r?\\n/).forEach(paragraph => {
+                        if (!paragraph) { lines.push(''); return; }
+                        let line = '';
+                        paragraph.split(/\\s+/).forEach(word => {
+                            const candidate = line ? line + ' ' + word : word;
+                            if (line && ctx.measureText(candidate).width > maxWidth) {
+                                lines.push(line); line = word;
+                            } else if (!line && ctx.measureText(word).width > maxWidth) {
+                                let part = '';
+                                Array.from(word).forEach(char => {
+                                    if (part && ctx.measureText(part + char).width > maxWidth) { lines.push(part); part = char; }
+                                    else part += char;
+                                });
+                                line = part;
+                            } else line = candidate;
+                        });
+                        lines.push(line);
+                    });
+                    const height = Math.max(lineHeight + 6, lines.length * lineHeight + 6);
+                    canvas.width = Math.ceil(logicalWidth * ratio);
+                    canvas.height = Math.ceil(height * ratio);
+                    ctx = canvas.getContext('2d');
+                    ctx.scale(ratio, ratio);
+                    ctx.font = font;
+                    ctx.direction = direction;
+                    ctx.textAlign = align;
+                    ctx.textBaseline = 'top';
+                    ctx.fillStyle = style.color || '#111';
+                    const x = align === 'right' ? logicalWidth - pad : pad;
+                    lines.forEach((line, lineIndex) => ctx.fillText(line, x, 3 + lineIndex * lineHeight));
+                    canvas.style.cssText = 'display:block;width:100%;height:' + height + 'px;max-width:100%;';
+                    const block = document.createElement('div');
+                    block.className = 'statement-print-text';
+                    block.style.cssText = 'display:block;width:100%;height:auto;min-height:' + height + 'px;box-sizing:border-box;overflow:visible;padding:0;margin:0;';
+                    block.appendChild(canvas);
+                    area.replaceWith(block);
+                    const row = block.closest('tr');
+                    if (row) { row.style.setProperty('height', 'auto', 'important'); row.style.setProperty('min-height', '0', 'important'); }
+                });
+                await new Promise(resolve => requestAnimationFrame(resolve));
+
                 // Recalculate each statement textarea after the export clone is attached and has its final width.
                 // This preserves every wrapped line and lets the table row grow to fit the full statement.
                 clone.querySelectorAll('.statement-print-text').forEach(field => {
@@ -859,13 +883,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     field.style.setProperty('min-height', '22px', 'important');
                     field.style.setProperty('max-height', 'none', 'important');
                     field.style.setProperty('overflow', 'visible', 'important');
-                    field.style.setProperty('white-space', 'pre-wrap', 'important');
-                    field.style.setProperty('overflow-wrap', 'anywhere', 'important');
                     const row = field.closest('tr');
-                    if (row) {
-                        row.style.setProperty('height', 'auto', 'important');
-                        row.style.setProperty('min-height', '0', 'important');
-                    }
+                    if (row) { row.style.setProperty('height', 'auto', 'important'); row.style.setProperty('min-height', '0', 'important'); }
                 });
                 await new Promise(resolve => requestAnimationFrame(resolve));
 
