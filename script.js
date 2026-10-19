@@ -689,8 +689,37 @@ document.addEventListener('DOMContentLoaded', () => {
             clone.querySelectorAll('#terms-ar, #terms-en').forEach(area => {
                 const replacement = document.createElement('div');
                 replacement.className = area.id === 'terms-ar' ? 'terms-print-text ar-box' : 'terms-print-text en-box';
-                replacement.textContent = area.value || '';
                 replacement.dir = area.id === 'terms-ar' ? 'rtl' : 'ltr';
+                if (area.id === 'terms-ar') {
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    const textNode = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    svg.setAttribute('viewBox', '0 0 330 90');
+                    svg.setAttribute('width', '100%');
+                    svg.setAttribute('height', '90');
+                    textNode.setAttribute('x', '324');
+                    textNode.setAttribute('y', '18');
+                    textNode.setAttribute('text-anchor', 'end');
+                    textNode.setAttribute('direction', 'rtl');
+                    textNode.setAttribute('font-family', 'Tajawal, Arial, sans-serif');
+                    textNode.setAttribute('font-size', '12');
+                    textNode.setAttribute('fill', '#111');
+                    const ctx = document.createElement('canvas').getContext('2d');
+                    if (ctx) ctx.font = '12px Tajawal, Arial, sans-serif';
+                    const words = (area.value || '').split(/\\s+/);
+                    let line = '', row = 0;
+                    words.forEach(word => {
+                        const next = line ? line + ' ' + word : word;
+                        if (line && ctx && ctx.measureText(next).width > 315) {
+                            const span = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+                            span.setAttribute('x', '324'); span.setAttribute('dy', row ? '18' : '0'); span.textContent = line;
+                            textNode.appendChild(span); line = word; row++;
+                        } else line = next;
+                    });
+                    const span = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+                    span.setAttribute('x', '324'); span.setAttribute('dy', row ? '18' : '0'); span.textContent = line;
+                    textNode.appendChild(span); svg.appendChild(textNode);
+                    replacement.appendChild(svg);
+                } else replacement.textContent = area.value || '';
                 replacement.style.cssText = 'display:block;width:100%;min-height:60px;height:auto;box-sizing:border-box;white-space:pre-wrap;overflow:visible;overflow-wrap:anywhere;font-size:0.75rem;line-height:1.5;padding:4px;text-align:' + (area.id === 'terms-ar' ? 'right' : 'left') + ';font-family:Tajawal,Arial,sans-serif;font-weight:500;direction:' + (area.id === 'terms-ar' ? 'rtl' : 'ltr') + ';unicode-bidi:normal;color:#111;background:transparent;border:0;';
                 area.replaceWith(replacement);
             });
