@@ -641,6 +641,9 @@ document.addEventListener('DOMContentLoaded', () => {
             #pdf-export-stage .terms-print-text.en-box { direction:ltr !important; text-align:left !important; unicode-bidi:plaintext !important; font-family:Tajawal,Arial,sans-serif !important; font-size:12px !important; line-height:1.2 !important; }
             #pdf-export-stage .table-select, #pdf-export-stage .car-type-select { appearance:none !important; -webkit-appearance:none !important; -moz-appearance:none !important; border:none !important; background:transparent !important; box-shadow:none !important; outline:none !important; color:#000 !important; text-align:center !important; text-align-last:center !important; width:100% !important; padding:0 !important; }
             #pdf-export-stage .terms-box textarea { border:none !important; background:transparent !important; resize:none !important; outline:none !important; height:auto !important; min-height:30px !important; overflow:visible !important; white-space:pre-wrap !important; font-size:12px !important; line-height:1.25 !important; }
+            #pdf-export-stage .quote-table tbody tr { height:auto !important; min-height:0 !important; }
+            #pdf-export-stage .quote-table tbody td { height:auto !important; min-height:0 !important; vertical-align:top !important; overflow:visible !important; }
+            #pdf-export-stage .statement-input { display:block !important; width:100% !important; height:auto !important; min-height:0 !important; max-height:none !important; overflow:visible !important; white-space:pre-wrap !important; overflow-wrap:anywhere !important; word-break:break-word !important; resize:none !important; line-height:1.3 !important; padding:0 2px !important; }
             #pdf-export-stage .terms-print-text { height:auto !important; min-height:30px !important; overflow:visible !important; white-space:pre-wrap !important; overflow-wrap:anywhere !important; font-size:12px !important; line-height:1.25 !important; }
             #pdf-export-stage.pdf-export-stage-desktop .a4-page { height:296mm !important; min-height:296mm !important; max-height:296mm !important; }
             #pdf-export-stage.pdf-export-stage-desktop .table-select, #pdf-export-stage.pdf-export-stage-desktop .car-type-select { font-size:.74rem !important; font-weight:800 !important; color:#000 !important; }
@@ -794,6 +797,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 stage.appendChild(clone);
                 await waitForImages(clone);
                 await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+                // Recalculate each statement textarea after the export clone is attached and has its final width.
+                // This preserves every wrapped line and lets the table row grow to fit the full statement.
+                clone.querySelectorAll('.statement-input').forEach(field => {
+                    field.style.setProperty('height', 'auto', 'important');
+                    field.style.setProperty('min-height', '0', 'important');
+                    field.style.setProperty('overflow', 'visible', 'important');
+                    field.style.setProperty('white-space', 'pre-wrap', 'important');
+                    field.style.setProperty('overflow-wrap', 'anywhere', 'important');
+                    field.style.setProperty('word-break', 'break-word', 'important');
+                    field.style.setProperty('height', Math.max(22, field.scrollHeight) + 'px', 'important');
+                    const row = field.closest('tr');
+                    if (row) {
+                        row.style.setProperty('height', 'auto', 'important');
+                        row.style.setProperty('min-height', '0', 'important');
+                    }
+                });
+                await new Promise(resolve => requestAnimationFrame(resolve));
 
                 // Fit the full Arabic/English terms block into the available A4 space before rendering.
                 // Reduce only terms typography/spacing as needed; never impose a fixed height that clips text.
