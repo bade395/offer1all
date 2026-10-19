@@ -762,7 +762,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (dateInput) {
                     const dateText = document.createElement('span');
                     dateText.className = 'quote-date-export';
-                    dateText.textContent = (sourcePage.querySelector('#quote-date')?.value || dateInput.value || '').replace(/\\s*م\\s*$/, '') + ' م';
+                    dateText.textContent = sourcePage.querySelector('#quote-date')?.value ?? dateInput.value ?? '';
                     dateInput.replaceWith(dateText);
                 }
                 // Lock the company title to the page center in the actual export clone.
