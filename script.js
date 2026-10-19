@@ -801,9 +801,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const bankSection = clone.querySelector('.bank-details-section');
                 const footer = clone.querySelector('.doc-footer-fixed');
                 if (termsContainer && bankSection && footer) {
-                    const termsTextBlocks = Array.from(termsContainer.querySelectorAll('textarea, .terms-print-text'));
-                    let fontSize = 0.625;
-                    let lineHeight = 1.2;
+                    // Keep the English export text at the same fixed visual size as the Arabic canvas text.
+                    // The old fit loop shrank HTML text but could not shrink the Arabic canvas bitmap,
+                    // which made English look much smaller in the exported PDF.
+                    const termsTextBlocks = Array.from(termsContainer.querySelectorAll('textarea, .terms-print-text:not(.en-box)'));
+                    let fontSize = 0.75;
+                    let lineHeight = 1.25;
                     let marginTop = 10;
                     for (let attempt = 0; attempt < 18; attempt++) {
                         termsTextBlocks.forEach(block => {
@@ -819,10 +822,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         const bankRect = bankSection.getBoundingClientRect();
                         const footerRect = footer.getBoundingClientRect();
                         if (bankRect.bottom <= footerRect.top - 6) break;
-                        fontSize = Math.max(0.42, fontSize * 0.9);
+                        fontSize = Math.max(0.5, fontSize * 0.9);
                         lineHeight = Math.max(1.0, lineHeight - 0.02);
                         marginTop = Math.max(0, marginTop - 1);
                     }
+                    clone.querySelectorAll('.terms-print-text.en-box').forEach(block => {
+                        block.style.setProperty('font-family', 'Tajawal, Arial, sans-serif', 'important');
+                        block.style.setProperty('font-size', '12px', 'important');
+                        block.style.setProperty('font-weight', '500', 'important');
+                        block.style.setProperty('line-height', '15px', 'important');
+                        block.style.setProperty('letter-spacing', 'normal', 'important');
+                    });
                 }
 
                 const printableBody = clone.querySelector('.doc-inner-body');
