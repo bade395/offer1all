@@ -634,6 +634,8 @@ document.addEventListener('DOMContentLoaded', () => {
             #pdf-export-stage .doc-meta-row { display:flex !important; justify-content:space-between !important; align-items:center !important; padding:0 2px !important; }
             #pdf-export-stage .doc-meta-row .meta-item { display:flex !important; align-items:center !important; gap:6px !important; }
             #pdf-export-stage .doc-meta-row .meta-input { width:140px !important; padding:1px 4px !important; margin:0 !important; direction:rtl !important; text-align:right !important; font-family:var(--font-arabic),Tajawal,sans-serif !important; font-size:inherit !important; font-weight:700 !important; line-height:normal !important; }
+            /* Keep the Latin date digits in their natural order, with the Arabic suffix after them. */
+            #pdf-export-stage #quote-date { direction:ltr !important; text-align:right !important; unicode-bidi:plaintext !important; }
             #pdf-export-stage .table-select, #pdf-export-stage .car-type-select { appearance:none !important; -webkit-appearance:none !important; -moz-appearance:none !important; border:none !important; background:transparent !important; box-shadow:none !important; outline:none !important; color:#000 !important; text-align:center !important; text-align-last:center !important; width:100% !important; padding:0 !important; }
             #pdf-export-stage .terms-box textarea { border:none !important; background:transparent !important; resize:none !important; outline:none !important; height:auto !important; min-height:60px !important; overflow:visible !important; white-space:pre-wrap !important; }
             #pdf-export-stage .terms-print-text { height:auto !important; min-height:60px !important; overflow:visible !important; white-space:pre-wrap !important; overflow-wrap:anywhere !important; }
@@ -684,7 +686,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isArabic = area.id === 'terms-ar';
                 const value = area.value || '';
                 replacement.dir = isArabic ? 'rtl' : 'ltr';
-                replacement.style.cssText = 'display:block;width:100%;min-height:36px;height:auto;box-sizing:border-box;padding:2px;text-align:' + (isArabic ? 'right' : 'left') + ';font-family:var(--font-arabic),Tajawal,Arial,sans-serif;font-size:0.68rem;line-height:1.25;color:#111;background:transparent;border:0;letter-spacing:normal;';
+                replacement.style.cssText = 'display:block;width:100%;min-height:30px;height:auto;box-sizing:border-box;padding:2px;text-align:' + (isArabic ? 'right' : 'left') + ';font-family:var(--font-arabic),Tajawal,Arial,sans-serif;font-size:0.625rem;line-height:1.2;color:#111;background:transparent;border:0;letter-spacing:normal;';
                 if (isArabic && value) {
                     // Draw Arabic with the browser's native canvas text shaper, then let
                     // html2canvas capture the bitmap. This avoids broken Arabic glyph shaping
@@ -693,8 +695,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const ctx = textCanvas.getContext('2d');
                     const pixelRatio = 2;
                     const logicalWidth = 330;
-                    const fontSize = 11;
-                    const lineHeight = 14;
+                    const fontSize = 10;
+                    const lineHeight = 12;
                     textCanvas.width = logicalWidth * pixelRatio;
                     ctx.scale(pixelRatio, pixelRatio);
                     ctx.font = '500 ' + fontSize + 'px Tajawal, Arial, sans-serif';
@@ -789,8 +791,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const footer = clone.querySelector('.doc-footer-fixed');
                 if (termsContainer && bankSection && footer) {
                     const termsTextBlocks = Array.from(termsContainer.querySelectorAll('textarea, .terms-print-text'));
-                    let fontSize = 0.75;
-                    let lineHeight = 1.3;
+                    let fontSize = 0.625;
+                    let lineHeight = 1.2;
                     let marginTop = 10;
                     for (let attempt = 0; attempt < 18; attempt++) {
                         termsTextBlocks.forEach(block => {
