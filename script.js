@@ -1281,23 +1281,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async function translateChunk(chunk) {
             if (chunk === '\n') return '\n';
-            try {
-                const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=' + encodeURIComponent(chunk);
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('Primary translation service unavailable');
-                const data = await response.json();
-                const translated = data && data[0] ? data[0].map(item => item[0] || '').join('').trim() : '';
-                if (!translated) throw new Error('Empty translation');
-                return translated;
-            } catch (error) {
-                const fallbackUrl = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(chunk) + '&langpair=ar%7Cen';
-                const response = await fetch(fallbackUrl);
-                if (!response.ok) throw new Error('Fallback translation service unavailable');
-                const data = await response.json();
-                const translated = data && data.responseData ? data.responseData.translatedText || '' : '';
-                if (!translated) throw new Error('Empty fallback translation');
-                return translated;
+            const services = [
+                async () => {
+                    const response = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=' + encodeURIComponent(chunk));
+                    if (!response.ok) throw new Error('Google translation unavailable (' + response.status + ')');
+                    const data = await response.json();
+                    const translated = data && Array.isArray(data[0]) ? data[0].map(item => item && item[0] || '').join('').trim() : '';
+                    if (!translated) throw new Error('Google returned an empty translation');
+                    return translated;
+                },
+                async () => {
+                    const response = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(chunk) + '&langpair=ar%7Cen');
+                    if (!response.ok) throw new Error('MyMemory translation unavailable (' + response.status + ')');
+                    const data = await response.json();
+                    const translated = data && data.responseData ? String(data.responseData.translatedText || '').trim() : '';
+                    if (!translated || /MYMEMORY WARNING/i.test(translated)) throw new Error('MyMemory returned no translation');
+                    return translated;
+                }
+            ];
+            let lastError;
+            for (const service of services) {
+                try { return await service(); } catch (error) { lastError = error; }
             }
+            throw lastError || new Error('Translation services unavailable');
         }
 
         termsAr.addEventListener('input', () => {
@@ -1323,11 +1329,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         if (requestId === latestTranslationRequest) {
                             termsEn.value = translatedChunks.join(' ').replace(/[ \t]*\n[ \t]*/g, '\n');
+                            termsEn.placeholder = 'Translated terms...';
+                            termsEn.title = '';
                             resizeTermsField(termsEn);
                             markQuoteDirty();
                         }
                     } catch (error) {
-                        if (requestId === latestTranslationRequest) console.error('Translation error:', error);
+                        if (requestId === latestTranslationRequest) {
+                            console.error('Translation error:', error);
+                            termsEn.value = '';
+                            termsEn.placeholder = 'Translation failed. Check your internet connection and edit the Arabic notes to retry.';
+                            termsEn.title = 'Automatic translation failed: ' + (error && error.message ? error.message : 'service unavailable');
+                        }
                     } finally {
                         resolve();
                     }
