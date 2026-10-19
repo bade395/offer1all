@@ -659,6 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
             #pdf-export-stage .quote-table tbody tr { height:auto !important; min-height:0 !important; }
             #pdf-export-stage .quote-table tbody td { height:auto !important; min-height:0 !important; vertical-align:top !important; overflow:visible !important; }
             #pdf-export-stage .statement-input { display:block !important; width:100% !important; height:auto !important; min-height:0 !important; max-height:none !important; overflow:visible !important; white-space:pre-wrap !important; overflow-wrap:anywhere !important; word-break:break-word !important; resize:none !important; line-height:1.3 !important; padding:0 2px !important; }
+            #pdf-export-stage .statement-print-text { display:block !important; width:100% !important; min-height:22px !important; height:auto !important; max-height:none !important; overflow:visible !important; white-space:pre-wrap !important; overflow-wrap:anywhere !important; word-break:break-word !important; line-height:1.3 !important; padding:0 2px !important; }
             #pdf-export-stage .terms-print-text { height:auto !important; min-height:30px !important; overflow:visible !important; white-space:pre-wrap !important; overflow-wrap:anywhere !important; font-size:12px !important; line-height:1.25 !important; }
             #pdf-export-stage.pdf-export-stage-desktop .a4-page { height:296mm !important; min-height:296mm !important; max-height:296mm !important; }
             #pdf-export-stage.pdf-export-stage-desktop .table-select, #pdf-export-stage.pdf-export-stage-desktop .car-type-select { font-size:.74rem !important; font-weight:800 !important; color:#000 !important; }
@@ -753,6 +754,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     replacement.style.whiteSpace = 'pre-wrap';
                     replacement.textContent = value;
                 }
+                area.replaceWith(replacement);
+            });
+
+            // Replace statement textareas with real text blocks in the PDF clone.
+            // html2canvas can clip multiline textarea content even when its height is correct.
+            clone.querySelectorAll('.statement-input').forEach(area => {
+                const replacement = document.createElement('div');
+                replacement.className = 'statement-print-text';
+                replacement.dir = area.dir || 'auto';
+                replacement.textContent = area.value || '';
+                replacement.style.cssText = 'display:block;width:100%;box-sizing:border-box;min-height:22px;height:auto;overflow:visible;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;text-align:right;font-family:var(--font-arabic),Tajawal,Arial,sans-serif;font-size:inherit;line-height:1.3;padding:0 2px;color:#111;background:transparent;border:0;';
                 area.replaceWith(replacement);
             });
         };
