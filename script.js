@@ -698,6 +698,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             if (document.fonts) await document.fonts.ready;
+            if (termsAr && termsAr.value.trim()) {
+                if (termsTranslationPromise) await Promise.race([termsTranslationPromise, new Promise(resolve => setTimeout(resolve, 8000))]);
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
             for (let i = 0; i < pages.length; i++) {
                 const sourcePage = pages[i];
                 const clone = sourcePage.cloneNode(true);
@@ -1089,16 +1093,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnExportPdfMobile) btnExportPdfMobile.addEventListener('click', () => handlePdfExport('mobile', btnExportPdfMobile));
     if (btnExportPdfDesktop) btnExportPdfDesktop.addEventListener('click', () => handlePdfExport('desktop', btnExportPdfDesktop));
 
-    // الترجمة التلقائية مع تمدد الحقول حسب عدد السطور
+    // الترجمة التلقائية مع تمدد الحقول وانتظارها قبل تصدير PDF
     const termsAr = document.getElementById('terms-ar');
     const termsEn = document.getElementById('terms-en');
     let translateTimeout;
     let latestTranslationRequest = 0;
+    let termsTranslationPromise = Promise.resolve();
 
     function resizeTermsField(field) {
         if (!field) return;
         field.style.height = 'auto';
-        field.style.height = Math.max(60, field.scrollHeight) + 'px';
+        field.style.height = Math.max(60, field.scrollHeight + 2) + 'px';
     }
 
     if (termsAr && termsEn) {
@@ -1110,25 +1115,28 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!text) {
                 termsEn.value = '';
                 resizeTermsField(termsEn);
+                termsTranslationPromise = Promise.resolve();
                 return;
             }
 
-            translateTimeout = setTimeout(() => {
-                fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(text)}`)
-                    .then(res => {
-                        if (!res.ok) throw new Error('Translation service unavailable');
-                        return res.json();
-                    })
-                    .then(data => {
-                        if (requestId !== latestTranslationRequest) return;
-                        if (data && data[0]) {
-                            termsEn.value = data[0].map(item => item[0]).join('');
-                            resizeTermsField(termsEn);
-                            termsEn.dispatchEvent(new Event('input', { bubbles: true }));
-                        }
-                    })
-                    .catch(err => console.error('Translation error:', err));
-            }, 500);
+            termsTranslationPromise = new Promise(resolve => {
+                translateTimeout = setTimeout(() => {
+                    fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(text)}`)
+                        .then(res => {
+                            if (!res.ok) throw new Error('Translation service unavailable');
+                            return res.json();
+                        })
+                        .then(data => {
+                            if (requestId === latestTranslationRequest && data && data[0]) {
+                                termsEn.value = data[0].map(item => item[0]).join('');
+                                resizeTermsField(termsEn);
+                                markQuoteDirty();
+                            }
+                        })
+                        .catch(err => console.error('Translation error:', err))
+                        .finally(resolve);
+                }, 350);
+            });
         });
 
         termsEn.addEventListener('input', () => resizeTermsField(termsEn));
