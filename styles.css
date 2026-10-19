@@ -745,7 +745,15 @@ body {
     direction: rtl !important;
 }
 #pdf-export-stage .bank-table .bank-value {
-    text-align: left !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+.bank-table .bank-value {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+.bank-table .bank-label {
+    vertical-align: middle !important;
 }
 .bank-table {
     border-collapse: collapse;
