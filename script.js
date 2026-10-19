@@ -1158,12 +1158,31 @@ document.addEventListener('DOMContentLoaded', () => {
                         })
                         .then(data => {
                             if (requestId === latestTranslationRequest && data && data[0]) {
-                                termsEn.value = data[0].map(item => item[0]).join('');
+                                const translated = data[0].map(item => item[0] || '').join('').trim();
+                                if (!translated) throw new Error('Empty translation');
+                                termsEn.value = translated;
+                                resizeTermsField(termsEn);
+                                markQuoteDirty();
+                                return;
+                            }
+                            if (requestId !== latestTranslationRequest) return;
+                            throw new Error('Empty translation');
+                        })
+                        .catch(async err => {
+                            if (requestId !== latestTranslationRequest) return;
+                            console.error('Primary translation error:', err);
+                            const fallbackUrl = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=ar%7Cen';
+                            const response = await fetch(fallbackUrl);
+                            if (!response.ok) throw new Error('Translation service unavailable');
+                            const data = await response.json();
+                            const translated = data && data.responseData ? data.responseData.translatedText || '' : '';
+                            if (requestId === latestTranslationRequest && translated) {
+                                termsEn.value = translated;
                                 resizeTermsField(termsEn);
                                 markQuoteDirty();
                             }
                         })
-                        .catch(err => console.error('Translation error:', err))
+                        .catch(err => console.error('Translation fallback error:', err))
                         .finally(resolve);
                 }, 350);
             });
