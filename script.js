@@ -636,7 +636,7 @@ document.addEventListener('DOMContentLoaded', () => {
             #pdf-export-stage .doc-meta-row .meta-input { width:140px !important; padding:1px 4px !important; margin:0 !important; direction:rtl !important; text-align:right !important; font-family:var(--font-arabic),Tajawal,sans-serif !important; font-size:inherit !important; font-weight:700 !important; line-height:normal !important; }
             #pdf-export-stage .doc-meta-row #quote-date { display:none !important; }
             #pdf-export-stage .doc-meta-row .quote-date-export { display:inline-block !important; width:140px !important; margin:0 !important; padding:1px 4px !important; direction:ltr !important; unicode-bidi:isolate !important; text-align:right !important; white-space:nowrap !important; font-family:var(--font-arabic),Tajawal,sans-serif !important; font-size:inherit !important; font-weight:700 !important; line-height:normal !important; }
-            #pdf-export-stage .terms-print-text { min-height:30px !important; height:auto !important; font-size:10px !important; line-height:1.2 !important; white-space:pre-wrap !important; overflow-wrap:anywhere !important; }
+            #pdf-export-stage .terms-print-text { min-height:30px !important; height:auto !important; font-size:12px !important; line-height:1.25 !important; white-space:pre-wrap !important; overflow-wrap:anywhere !important; }
             #pdf-export-stage .terms-print-text.ar-box { direction:rtl !important; text-align:right !important; }
             #pdf-export-stage .terms-print-text.en-box { direction:ltr !important; text-align:left !important; unicode-bidi:plaintext !important; font-family:Tajawal,Arial,sans-serif !important; font-size:12px !important; line-height:1.2 !important; }
             #pdf-export-stage .table-select, #pdf-export-stage .car-type-select { appearance:none !important; -webkit-appearance:none !important; -moz-appearance:none !important; border:none !important; background:transparent !important; box-shadow:none !important; outline:none !important; color:#000 !important; text-align:center !important; text-align-last:center !important; width:100% !important; padding:0 !important; }
@@ -689,7 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isArabic = area.id === 'terms-ar';
                 const value = area.value || '';
                 replacement.dir = isArabic ? 'rtl' : 'ltr';
-                replacement.style.cssText = 'display:block;width:100%;min-height:30px;height:auto;box-sizing:border-box;padding:2px;text-align:' + (isArabic ? 'right' : 'left') + ';font-family:var(--font-arabic),Tajawal,Arial,sans-serif;font-size:0.625rem;line-height:1.2;color:#111;background:transparent;border:0;letter-spacing:normal;';
+                replacement.style.cssText = 'display:block;width:100%;min-height:30px;height:auto;box-sizing:border-box;padding:2px;text-align:' + (isArabic ? 'right' : 'left') + ';font-family:var(--font-arabic),Tajawal,Arial,sans-serif;font-size:12px;line-height:1.25;color:#111;background:transparent;border:0;letter-spacing:normal;';
                 if (isArabic && value) {
                     // Draw Arabic with the browser's native canvas text shaper, then let
                     // html2canvas capture the bitmap. This avoids broken Arabic glyph shaping
@@ -698,8 +698,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const ctx = textCanvas.getContext('2d');
                     const pixelRatio = 2;
                     const logicalWidth = 330;
-                    const fontSize = 10;
-                    const lineHeight = 12;
+                    const fontSize = 12;
+                    const lineHeight = 15;
                     textCanvas.width = logicalWidth * pixelRatio;
                     ctx.scale(pixelRatio, pixelRatio);
                     ctx.font = '500 ' + fontSize + 'px Tajawal, Arial, sans-serif';
