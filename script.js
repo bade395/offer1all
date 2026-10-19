@@ -131,13 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input type="text" inputmode="numeric" class="editable-field table-input" value="${item.quantity}" data-index="${index}" data-key="quantity" placeholder="0">
             </td>
             
-            <td>
-                <select class="table-select" data-index="${index}" data-key="typeOfRent">
-                    <option value="Yearly / سنوي" ${item.typeOfRent === 'Yearly / سنوي' ? 'selected' : ''}>Yearly / سنوي</option>
-                    <option value="Monthly / شهري" ${item.typeOfRent === 'Monthly / شهري' ? 'selected' : ''}>Monthly / شهري</option>
-                    <option value="Daily / يومي" ${item.typeOfRent === 'Daily / يومي' ? 'selected' : ''}>Daily / يومي</option>
-                </select>
-            </td>
+            
             <td>
                 <input type="text" inputmode="decimal" class="editable-field table-input price-input" value="${item.rentalPrice}" data-index="${index}" data-key="rentalPrice" placeholder="0.00">
             </td>
@@ -997,7 +991,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (deleteButton) deleteSavedQuote(deleteButton.getAttribute('data-delete-quote'));
     });
 
+    document.querySelectorAll('#terms-ar, #terms-en').forEach(field => {
+        field.style.height = 'auto';
+        field.style.height = Math.max(60, field.scrollHeight) + 'px';
+    });
+
     document.addEventListener('input', event => {
+        if (event.target.matches('#terms-ar, #terms-en')) {
+            event.target.style.height = 'auto';
+            event.target.style.height = Math.max(60, event.target.scrollHeight) + 'px';
+        }
         if (event.target.matches('#client-name, #quote-date, #quote-ref, #terms-ar, #terms-en, input[data-index], select[data-index], textarea')) markQuoteDirty();
     });
     document.addEventListener('change', event => {
