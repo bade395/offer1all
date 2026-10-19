@@ -691,7 +691,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 replacement.className = area.id === 'terms-ar' ? 'terms-print-text ar-box' : 'terms-print-text en-box';
                 replacement.textContent = area.value || '';
                 replacement.dir = area.id === 'terms-ar' ? 'rtl' : 'ltr';
-                replacement.style.cssText = 'display:block;width:100%;min-height:60px;height:auto;box-sizing:border-box;white-space:pre-wrap;overflow:visible;overflow-wrap:anywhere;font-size:0.75rem;line-height:1.3;padding:4px;text-align:' + (area.id === 'terms-ar' ? 'right' : 'left') + ';font-family:inherit;color:#111;background:transparent;border:0;';
+                replacement.style.cssText = 'display:block;width:100%;min-height:60px;height:auto;box-sizing:border-box;white-space:pre-wrap;overflow:visible;overflow-wrap:anywhere;font-size:0.75rem;line-height:1.5;padding:4px;text-align:' + (area.id === 'terms-ar' ? 'right' : 'left') + ';font-family:Tajawal,Arial,sans-serif;font-weight:500;direction:' + (area.id === 'terms-ar' ? 'rtl' : 'ltr') + ';unicode-bidi:plaintext;color:#111;background:transparent;border:0;';
                 area.replaceWith(replacement);
             });
         };
