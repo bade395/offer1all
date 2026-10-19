@@ -1014,3 +1014,60 @@ body.rendering-pdf .a4-page {
     padding:0 !important;
   }
 }
+
+
+/* Final layout refinements */
+.bank-details-section {
+    display: grid !important;
+    grid-template-columns: 1fr minmax(0, 2fr) 1fr;
+    align-items: center;
+    justify-items: stretch;
+    gap: 10px;
+    width: 100%;
+    margin-top: auto;
+    padding: 8px 12px 12px;
+    box-sizing: border-box;
+    direction: ltr;
+}
+.bank-details-section .bank-table {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    justify-self: center;
+}
+.bank-details-section .bank-stamp-box {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: center;
+    align-self: center;
+    margin: 0;
+}
+.bank-details-section .bank-stamp-box .official-stamp-img {
+    max-width: 115px;
+    max-height: 95px;
+    object-fit: contain;
+}
+.terms-box textarea {
+    height: auto;
+    min-height: 60px;
+    overflow-y: hidden;
+    resize: none;
+    white-space: pre-wrap;
+}
+@media print {
+    .bank-details-section { margin-top: auto; }
+}
+@media (max-width: 700px) {
+    .bank-details-section {
+        grid-template-columns: 1fr minmax(0, 2fr) 1fr;
+        gap: 5px;
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+    .bank-details-section .bank-stamp-box .official-stamp-img {
+        max-width: 76px;
+        max-height: 76px;
+    }
+    .bank-table { font-size: 0.62rem; }
+    .bank-table td { padding: 2px 4px; }
+}
