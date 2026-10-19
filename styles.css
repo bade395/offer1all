@@ -321,6 +321,7 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
+    width: 100%;
     font-size: 1.05rem;
     font-weight: 800;
     color: var(--text-dark);
@@ -329,9 +330,14 @@ body {
 
 .client-input {
     flex: 1;
+    min-width: 0;
     font-size: 1.05rem;
     font-weight: 800;
     color: var(--primary-blue);
+    text-align: center !important;
+    text-align-last: center !important;
+    direction: rtl;
+    font-family: var(--font-arabic) !important;
 }
 
 .greeting-text {
