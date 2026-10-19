@@ -697,7 +697,15 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            if (document.fonts) await document.fonts.ready;
+            // Load the actual Arabic font weights before html2canvas snapshots the page.
+            // A fallback font is a common cause of disconnected Arabic glyphs in generated PDFs.
+            if (document.fonts) {
+                await Promise.all([
+                    document.fonts.load('500 12px Tajawal', 'الملاحظات والشروط'),
+                    document.fonts.load('800 24px Tajawal', 'النسر الثاقب'),
+                    document.fonts.ready
+                ]);
+            }
             if (termsAr && termsAr.value.trim()) {
                 if (termsTranslationPromise) await Promise.race([termsTranslationPromise, new Promise(resolve => setTimeout(resolve, 8000))]);
                 await new Promise(resolve => setTimeout(resolve, 50));
@@ -706,6 +714,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const sourcePage = pages[i];
                 const clone = sourcePage.cloneNode(true);
                 syncFormValues(sourcePage, clone);
+                // Lock the company title to the page center in the actual export clone.
+                clone.querySelectorAll('.company-brand').forEach(brand => {
+                    brand.style.setProperty('width', '100%', 'important');
+                    brand.style.setProperty('text-align', 'center', 'important');
+                });
+                clone.querySelectorAll('.company-title').forEach(title => {
+                    title.style.setProperty('display', 'block', 'important');
+                    title.style.setProperty('width', '100%', 'important');
+                    title.style.setProperty('margin-left', 'auto', 'important');
+                    title.style.setProperty('margin-right', 'auto', 'important');
+                    title.style.setProperty('text-align', 'center', 'important');
+                    title.style.setProperty('text-align-last', 'center', 'important');
+                    title.style.setProperty('letter-spacing', 'normal', 'important');
+                });
                 stage.appendChild(clone);
                 await waitForImages(clone);
                 await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -745,6 +767,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     windowWidth:A4_WIDTH_PX, windowHeight:A4_HEIGHT_PX,
                     x:0, y:0, scrollX:0, scrollY:0,
                     useCORS:true, allowTaint:false, backgroundColor:'#ffffff',
+                    foreignObjectRendering:true,
                     imageTimeout:15000, logging:false, removeContainer:true
                 });
                 if (i > 0) pdf.addPage('a4', 'portrait');
