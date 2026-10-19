@@ -710,6 +710,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 await waitForImages(clone);
                 await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
+                // Fit the full Arabic/English terms block into the available A4 space before rendering.
+                // Reduce only terms typography/spacing as needed; never impose a fixed height that clips text.
+                const termsContainer = clone.querySelector('.terms-translation-container');
+                const bankSection = clone.querySelector('.bank-details-section');
+                const footer = clone.querySelector('.doc-footer-fixed');
+                if (termsContainer && bankSection && footer) {
+                    const termsTextBlocks = Array.from(termsContainer.querySelectorAll('textarea, .terms-print-text'));
+                    let fontSize = 0.75;
+                    let lineHeight = 1.3;
+                    let marginTop = 10;
+                    for (let attempt = 0; attempt < 18; attempt++) {
+                        termsTextBlocks.forEach(block => {
+                            block.style.setProperty('font-size', fontSize + 'rem', 'important');
+                            block.style.setProperty('line-height', String(lineHeight), 'important');
+                            block.style.setProperty('padding', '2px', 'important');
+                            block.style.setProperty('min-height', '0', 'important');
+                            block.style.setProperty('height', 'auto', 'important');
+                            block.style.setProperty('max-height', 'none', 'important');
+                            block.style.setProperty('overflow', 'visible', 'important');
+                        });
+                        termsContainer.style.setProperty('margin-top', marginTop + 'px', 'important');
+                        const bankRect = bankSection.getBoundingClientRect();
+                        const footerRect = footer.getBoundingClientRect();
+                        if (bankRect.bottom <= footerRect.top - 6) break;
+                        fontSize = Math.max(0.42, fontSize * 0.9);
+                        lineHeight = Math.max(1.0, lineHeight - 0.02);
+                        marginTop = Math.max(0, marginTop - 1);
+                    }
+                }
+
                 const canvas = await html2canvas(clone, {
                     scale: renderScale, width:A4_WIDTH_PX, height:A4_HEIGHT_PX,
                     windowWidth:A4_WIDTH_PX, windowHeight:A4_HEIGHT_PX,
