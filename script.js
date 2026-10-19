@@ -149,41 +149,28 @@ document.addEventListener('DOMContentLoaded', () => {
         itemsTbody.innerHTML = '';
         if (itemsTbody2) itemsTbody2.innerHTML = '';
 
-        const page1Cutoff = Math.min(items.length, MAX_PAGE1_CAPACITY);
-        const page1Items = items.slice(0, page1Cutoff);
-        const page2Items = items.slice(page1Cutoff);
-
-        page1Items.forEach((item, idx) => {
+        // Keep all quotation items together on page one; page two is never used for output.
+        const page1Cutoff = items.length;
+        items.forEach((item, idx) => {
             const tr = document.createElement('tr');
             tr.setAttribute('data-row', idx);
             tr.innerHTML = buildRowHtml(item, idx);
             itemsTbody.appendChild(tr);
         });
+        if (overflowPage) overflowPage.style.display = 'none';
+        tableSection1.after(summaryAndStampBlock);
 
-        if (page2Items.length > 0) {
-            overflowPage.style.display = 'block';
-            page2Items.forEach((item, idx) => {
-                const actualIdx = page1Cutoff + idx;
-                const tr = document.createElement('tr');
-                tr.setAttribute('data-row', actualIdx);
-                tr.innerHTML = buildRowHtml(item, actualIdx);
-                itemsTbody2.appendChild(tr);
-            });
-            tableSection2.after(summaryAndStampBlock);
-        } else {
-            overflowPage.style.display = 'none';
-            tableSection1.after(summaryAndStampBlock);
-        }
-
-        const addRowTarget = page2Items.length > 0 ? itemsTbody2 : itemsTbody;
+        const addRowTarget = itemsTbody;
         const addRow = document.createElement('tr');
         addRow.className = 'add-item-table-row no-print';
         addRow.innerHTML = '<td colspan="7"><button type="button" class="btn-add-inline" data-add-row>＋ إضافة بند</button></td>';
         addRowTarget.appendChild(addRow);
 
         document.querySelectorAll('.statement-input').forEach(field => {
+            field.rows = 1;
             field.style.height = 'auto';
-            field.style.height = Math.max(42, field.scrollHeight) + 'px';
+            field.style.minHeight = '0';
+            field.style.height = Math.max(22, field.scrollHeight) + 'px';
         });
         updateTotals();
         attachInputListeners();
@@ -675,7 +662,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     target.value = field.value;
                     target.textContent = field.value;
                     target.style.height = 'auto';
-                    target.style.height = Math.max(field.id.startsWith('terms-') ? 60 : 42, target.scrollHeight) + 'px';
+                    target.style.minHeight = field.classList.contains('statement-input') ? '0' : '';
+                    target.style.height = Math.max(field.id.startsWith('terms-') ? 60 : (field.classList.contains('statement-input') ? 22 : 24), target.scrollHeight) + 'px';
                 } else if (field.tagName === 'SELECT') {
                     Array.from(target.options).forEach(option => option.selected = option.value === field.value);
                     target.setAttribute('data-pdf-value', field.value);
@@ -692,7 +680,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isArabic = area.id === 'terms-ar';
                 const value = area.value || '';
                 replacement.dir = isArabic ? 'rtl' : 'ltr';
-                replacement.style.cssText = 'display:block;width:100%;min-height:60px;height:auto;box-sizing:border-box;padding:4px;text-align:' + (isArabic ? 'right' : 'left') + ';font-family:var(--font-arabic),Tajawal,Arial,sans-serif;font-size:0.75rem;line-height:1.5;color:#111;background:transparent;border:0;letter-spacing:normal;';
+                replacement.style.cssText = 'display:block;width:100%;min-height:36px;height:auto;box-sizing:border-box;padding:2px;text-align:' + (isArabic ? 'right' : 'left') + ';font-family:var(--font-arabic),Tajawal,Arial,sans-serif;font-size:0.68rem;line-height:1.25;color:#111;background:transparent;border:0;letter-spacing:normal;';
                 if (isArabic && value) {
                     // Draw Arabic with the browser's native canvas text shaper, then let
                     // html2canvas capture the bitmap. This avoids broken Arabic glyph shaping
@@ -701,8 +689,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const ctx = textCanvas.getContext('2d');
                     const pixelRatio = 2;
                     const logicalWidth = 330;
-                    const fontSize = 12;
-                    const lineHeight = 18;
+                    const fontSize = 11;
+                    const lineHeight = 14;
                     textCanvas.width = logicalWidth * pixelRatio;
                     ctx.scale(pixelRatio, pixelRatio);
                     ctx.font = '500 ' + fontSize + 'px Tajawal, Arial, sans-serif';
@@ -818,6 +806,26 @@ document.addEventListener('DOMContentLoaded', () => {
                         lineHeight = Math.max(1.0, lineHeight - 0.02);
                         marginTop = Math.max(0, marginTop - 1);
                     }
+                }
+
+                const printableBody = clone.querySelector('.doc-inner-body');
+                const pageFooter = clone.querySelector('.doc-footer-fixed');
+                if (printableBody && pageFooter) {
+                    printableBody.style.setProperty('top', '40mm', 'important');
+                    printableBody.style.setProperty('bottom', 'auto', 'important');
+                    printableBody.style.setProperty('height', 'auto', 'important');
+                    printableBody.style.setProperty('overflow', 'visible', 'important');
+                    printableBody.style.setProperty('transform-origin', 'top left', 'important');
+                    printableBody.style.setProperty('transform', 'none', 'important');
+                    printableBody.style.setProperty('right', 'auto', 'important');
+                    printableBody.style.setProperty('width', '182mm', 'important');
+                    const naturalHeight = Math.max(printableBody.scrollHeight, printableBody.getBoundingClientRect().height, 1);
+                    const footerTop = pageFooter.getBoundingClientRect().top;
+                    const bodyTop = printableBody.getBoundingClientRect().top;
+                    const availableHeight = Math.max(100, footerTop - bodyTop - 8);
+                    const fitScale = Math.min(1, availableHeight / naturalHeight);
+                    printableBody.style.setProperty('width', 'calc(182mm / ' + fitScale + ')', 'important');
+                    printableBody.style.setProperty('transform', 'scale(' + fitScale + ')', 'important');
                 }
 
                 const canvas = await html2canvas(clone, {
@@ -1276,6 +1284,35 @@ document.addEventListener('DOMContentLoaded', () => {
         resizeTermsField(termsAr);
         resizeTermsField(termsEn);
     }
+
+    function fitLiveDocumentForPrint() {
+        const page = document.querySelector('.page-1');
+        const body = page && page.querySelector('.doc-inner-body');
+        const footer = page && page.querySelector('.doc-footer-fixed');
+        if (!body || !footer) return;
+        body.style.setProperty('top', '40mm', 'important');
+        body.style.setProperty('bottom', 'auto', 'important');
+        body.style.setProperty('height', 'auto', 'important');
+        body.style.setProperty('overflow', 'visible', 'important');
+        body.style.setProperty('transform-origin', 'top left', 'important');
+        body.style.setProperty('transform', 'none', 'important');
+        body.style.setProperty('right', 'auto', 'important');
+        body.style.setProperty('width', '182mm', 'important');
+        const naturalHeight = Math.max(body.scrollHeight, body.getBoundingClientRect().height, 1);
+        const availableHeight = Math.max(100, footer.getBoundingClientRect().top - body.getBoundingClientRect().top - 8);
+        const fitScale = Math.min(1, availableHeight / naturalHeight);
+        body.style.setProperty('width', 'calc(182mm / ' + fitScale + ')', 'important');
+        body.style.setProperty('transform', 'scale(' + fitScale + ')', 'important');
+    }
+
+    function resetLivePrintFit() {
+        const body = document.querySelector('.page-1 .doc-inner-body');
+        if (!body) return;
+        ['top','bottom','height','overflow','transform-origin','transform','right','width'].forEach(prop => body.style.removeProperty(prop));
+    }
+
+    window.addEventListener('beforeprint', fitLiveDocumentForPrint);
+    window.addEventListener('afterprint', resetLivePrintFit);
 
     generateAutoMeta();
     renderItems();
