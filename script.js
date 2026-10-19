@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     const defaultItems = [
-        { carType: 'HYUNDAI GRAND i10', quantity: '', duration: '', typeOfRent: 'Yearly / سنوي', rentalPrice: '', extraKmPrice: '', isCustom: false }
+        { carType: '', quantity: '', duration: '', typeOfRent: 'Yearly / سنوي', rentalPrice: '', extraKmPrice: '', isCustom: false }
     ];
 
     const CAR_OPTIONS = [
@@ -103,9 +103,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (row) {
-                row.cells[4].innerHTML = lineTotal > 0 ? formatMoney(lineTotal, 2) : '0.00';
-                row.cells[5].innerHTML = lineVat > 0 ? formatMoney(lineVat, 2) : '0.00';
-                row.cells[6].innerHTML = lineGrand > 0 ? formatMoney(lineGrand, 2) : '0.00';
+                row.cells[3].textContent = formatMoney(lineTotal, 2);
+                row.cells[4].textContent = formatMoney(lineVat, 2);
+                row.cells[5].textContent = formatMoney(lineGrand, 2);
             }
         });
 
@@ -175,6 +175,12 @@ document.addEventListener('DOMContentLoaded', () => {
             tableSection1.after(summaryAndStampBlock);
         }
 
+        const addRowTarget = page2Items.length > 0 ? itemsTbody2 : itemsTbody;
+        const addRow = document.createElement('tr');
+        addRow.className = 'add-item-table-row no-print';
+        addRow.innerHTML = '<td colspan="7"><button type="button" class="btn-add-inline" data-add-row>＋ إضافة بند</button></td>';
+        addRowTarget.appendChild(addRow);
+
         document.querySelectorAll('.statement-input').forEach(field => {
             field.style.height = 'auto';
             field.style.height = Math.max(42, field.scrollHeight) + 'px';
@@ -216,6 +222,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+        document.querySelectorAll('[data-add-row]').forEach(btn => {
+            btn.addEventListener('click', () => addNewItem());
+        });
+
         document.querySelectorAll('.btn-del-row').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const idx = parseInt(e.target.getAttribute('data-index'));
@@ -225,10 +235,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    btnAddItem.addEventListener('click', () => {
+    function addNewItem() {
         markQuoteDirty();
         items.push({
-            carType: CAR_OPTIONS[0],
+            carType: '',
             quantity: '',
             duration: '',
             typeOfRent: 'Yearly / سنوي',
@@ -237,7 +247,9 @@ document.addEventListener('DOMContentLoaded', () => {
             isCustom: false
         });
         renderItems();
-    });
+    }
+
+    btnAddItem.addEventListener('click', addNewItem);
 
     btnGenRef.addEventListener('click', () => {
         generateAutoMeta();
