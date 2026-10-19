@@ -689,9 +689,55 @@ document.addEventListener('DOMContentLoaded', () => {
             clone.querySelectorAll('#terms-ar, #terms-en').forEach(area => {
                 const replacement = document.createElement('div');
                 replacement.className = area.id === 'terms-ar' ? 'terms-print-text ar-box' : 'terms-print-text en-box';
-                replacement.dir = area.id === 'terms-ar' ? 'rtl' : 'ltr';
-                replacement.textContent = area.value || '';
-                replacement.style.cssText = 'display:block;width:100%;min-height:60px;height:auto;box-sizing:border-box;white-space:pre-wrap;overflow:visible;overflow-wrap:anywhere;font-size:0.75rem;line-height:1.5;padding:4px;text-align:' + (area.id === 'terms-ar' ? 'right' : 'left') + ';font-family:Tajawal,Arial,sans-serif;font-weight:500;direction:' + (area.id === 'terms-ar' ? 'rtl' : 'ltr') + ';unicode-bidi:embed;color:#111;background:transparent;border:0;';
+                const isArabic = area.id === 'terms-ar';
+                const value = area.value || '';
+                replacement.dir = isArabic ? 'rtl' : 'ltr';
+                replacement.style.cssText = 'display:block;width:100%;min-height:60px;height:auto;box-sizing:border-box;padding:4px;text-align:' + (isArabic ? 'right' : 'left') + ';font-family:var(--font-arabic),Tajawal,Arial,sans-serif;font-size:0.75rem;line-height:1.5;color:#111;background:transparent;border:0;letter-spacing:normal;';
+                if (isArabic && value) {
+                    // Draw Arabic with the browser's native canvas text shaper, then let
+                    // html2canvas capture the bitmap. This avoids broken Arabic glyph shaping
+                    // that can happen when textarea text is copied into cloned HTML.
+                    const textCanvas = document.createElement('canvas');
+                    const ctx = textCanvas.getContext('2d');
+                    const pixelRatio = 2;
+                    const logicalWidth = 330;
+                    const fontSize = 12;
+                    const lineHeight = 18;
+                    textCanvas.width = logicalWidth * pixelRatio;
+                    ctx.scale(pixelRatio, pixelRatio);
+                    ctx.font = '500 ' + fontSize + 'px Tajawal, Arial, sans-serif';
+                    ctx.direction = 'rtl';
+                    ctx.textAlign = 'right';
+                    const maxWidth = logicalWidth - 12;
+                    const lines = [];
+                    value.split(/\\r?\\n/).forEach(paragraph => {
+                        if (!paragraph) { lines.push(''); return; }
+                        let line = '';
+                        paragraph.split(/\\s+/).forEach(word => {
+                            const candidate = line ? line + ' ' + word : word;
+                            if (line && ctx.measureText(candidate).width > maxWidth) {
+                                lines.push(line);
+                                line = word;
+                            } else line = candidate;
+                        });
+                        lines.push(line);
+                    });
+                    const height = Math.max(60, lines.length * lineHeight + 8);
+                    textCanvas.height = height * pixelRatio;
+                    const draw = textCanvas.getContext('2d');
+                    draw.scale(pixelRatio, pixelRatio);
+                    draw.font = '500 ' + fontSize + 'px Tajawal, Arial, sans-serif';
+                    draw.direction = 'rtl';
+                    draw.textAlign = 'right';
+                    draw.textBaseline = 'top';
+                    draw.fillStyle = '#111111';
+                    lines.forEach((line, index) => draw.fillText(line, logicalWidth - 6, 4 + index * lineHeight));
+                    textCanvas.style.cssText = 'display:block;width:100%;height:' + height + 'px;object-fit:fill;';
+                    replacement.appendChild(textCanvas);
+                } else {
+                    replacement.style.whiteSpace = 'pre-wrap';
+                    replacement.textContent = value;
+                }
                 area.replaceWith(replacement);
             });
         };
