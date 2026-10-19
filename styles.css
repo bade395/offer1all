@@ -1071,3 +1071,24 @@ body.rendering-pdf .a4-page {
     .bank-table { font-size: 0.62rem; }
     .bank-table td { padding: 2px 4px; }
 }
+
+
+/* Inline add-item control and clear calculation columns */
+.add-item-table-row td {
+    text-align: right;
+    padding: 5px 8px;
+    border-top: 1px dashed #b8960c;
+}
+.btn-add-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 0;
+    background: transparent;
+    color: #14532d;
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+.btn-add-inline:hover { text-decoration: underline; }
