@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const lineGrand = lineTotal + lineVat;
 
         const carFieldHtml = `
-            <textarea rows="2" class="editable-field table-input statement-input" data-index="${index}" data-key="carType" placeholder="اكتب البيان">${item.carType || ''}</textarea>
+            <textarea rows="1" class="editable-field table-input statement-input" data-index="${index}" data-key="carType" placeholder="اكتب البيان"></textarea>
         `;
 
         return `
@@ -143,6 +143,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${items.length > 1 ? `<button type="button" class="btn-del-row" data-index="${index}">×</button>` : ''}
             </td>
         `;
+    }
+
+    function resizeStatementInput(field) {
+        if (!field) return;
+        field.style.height = 'auto';
+        field.style.minHeight = '0';
+        field.style.overflow = 'hidden';
+        field.style.whiteSpace = 'pre-wrap';
+        field.style.overflowWrap = 'anywhere';
+        const styles = window.getComputedStyle(field);
+        const lineHeight = parseFloat(styles.lineHeight) || 18;
+        field.style.height = Math.max(lineHeight + 6, field.scrollHeight + 2) + 'px';
+        const row = field.closest('tr');
+        if (row) {
+            row.style.height = 'auto';
+            row.style.minHeight = '0';
+        }
     }
 
     function renderItems() {
@@ -167,10 +184,9 @@ document.addEventListener('DOMContentLoaded', () => {
         addRowTarget.appendChild(addRow);
 
         document.querySelectorAll('.statement-input').forEach(field => {
-            field.rows = 1;
-            field.style.height = 'auto';
-            field.style.minHeight = '0';
-            field.style.height = Math.max(22, field.scrollHeight) + 'px';
+            const idx = Number(field.getAttribute('data-index'));
+            field.value = String(items[idx]?.carType ?? '');
+            resizeStatementInput(field);
         });
         updateTotals();
         attachInputListeners();
@@ -193,8 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 items[idx][key] = rawVal;
                 if (e.target.classList.contains('statement-input')) {
-                    e.target.style.height = 'auto';
-                    e.target.style.height = Math.max(42, e.target.scrollHeight) + 'px';
+                    resizeStatementInput(e.target);
                 }
                 updateTotals();
             });
