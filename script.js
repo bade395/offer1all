@@ -1242,6 +1242,54 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (termsAr && termsEn) {
+        // Break long notes into requests below the translation service's 500-character limit.
+        function splitTranslationText(text, maxLength = 450) {
+            const chunks = [];
+            let current = '';
+            const paragraphs = text.split(/\\n/);
+            for (let p = 0; p < paragraphs.length; p++) {
+                const paragraph = paragraphs[p];
+                const words = paragraph.match(/\\S+\\s*/g) || [];
+                for (const word of words) {
+                    if (current.length + word.length > maxLength && current.trim()) {
+                        chunks.push(current.trimEnd());
+                        current = '';
+                    }
+                    let remaining = word;
+                    while (remaining.length > maxLength) {
+                        if (current.trim()) { chunks.push(current.trimEnd()); current = ''; }
+                        chunks.push(remaining.slice(0, maxLength));
+                        remaining = remaining.slice(maxLength);
+                    }
+                    current += remaining;
+                }
+                if (current.trim()) { chunks.push(current.trimEnd()); current = ''; }
+                if (p < paragraphs.length - 1) chunks.push('\\n');
+            }
+            return chunks.filter(chunk => chunk === '\\n' || chunk.trim());
+        }
+
+        async function translateChunk(chunk) {
+            if (chunk === '\\n') return '\\n';
+            try {
+                const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=' + encodeURIComponent(chunk);
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Primary translation service unavailable');
+                const data = await response.json();
+                const translated = data && data[0] ? data[0].map(item => item[0] || '').join('').trim() : '';
+                if (!translated) throw new Error('Empty translation');
+                return translated;
+            } catch (error) {
+                const fallbackUrl = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(chunk) + '&langpair=ar%7Cen';
+                const response = await fetch(fallbackUrl);
+                if (!response.ok) throw new Error('Fallback translation service unavailable');
+                const data = await response.json();
+                const translated = data && data.responseData ? data.responseData.translatedText || '' : '';
+                if (!translated) throw new Error('Empty fallback translation');
+                return translated;
+            }
+        }
+
         termsAr.addEventListener('input', () => {
             resizeTermsField(termsAr);
             clearTimeout(translateTimeout);
@@ -1255,40 +1303,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             termsTranslationPromise = new Promise(resolve => {
-                translateTimeout = setTimeout(() => {
-                    fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(text)}`)
-                        .then(res => {
-                            if (!res.ok) throw new Error('Translation service unavailable');
-                            return res.json();
-                        })
-                        .then(data => {
-                            if (requestId === latestTranslationRequest && data && data[0]) {
-                                const translated = data[0].map(item => item[0] || '').join('').trim();
-                                if (!translated) throw new Error('Empty translation');
-                                termsEn.value = translated;
-                                resizeTermsField(termsEn);
-                                markQuoteDirty();
-                                return;
-                            }
+                translateTimeout = setTimeout(async () => {
+                    try {
+                        const chunks = splitTranslationText(text);
+                        const translatedChunks = [];
+                        for (const chunk of chunks) {
                             if (requestId !== latestTranslationRequest) return;
-                            throw new Error('Empty translation');
-                        })
-                        .catch(async err => {
-                            if (requestId !== latestTranslationRequest) return;
-                            console.error('Primary translation error:', err);
-                            const fallbackUrl = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=ar%7Cen';
-                            const response = await fetch(fallbackUrl);
-                            if (!response.ok) throw new Error('Translation service unavailable');
-                            const data = await response.json();
-                            const translated = data && data.responseData ? data.responseData.translatedText || '' : '';
-                            if (requestId === latestTranslationRequest && translated) {
-                                termsEn.value = translated;
-                                resizeTermsField(termsEn);
-                                markQuoteDirty();
-                            }
-                        })
-                        .catch(err => console.error('Translation fallback error:', err))
-                        .finally(resolve);
+                            translatedChunks.push(await translateChunk(chunk));
+                        }
+                        if (requestId === latestTranslationRequest) {
+                            termsEn.value = translatedChunks.join(' ').replace(/\\s+\\n/g, '\\n').replace(/\\n\\s+/g, '\\n');
+                            resizeTermsField(termsEn);
+                            markQuoteDirty();
+                        }
+                    } catch (error) {
+                        if (requestId === latestTranslationRequest) console.error('Translation error:', error);
+                    } finally {
+                        resolve();
+                    }
                 }, 350);
             });
         });
