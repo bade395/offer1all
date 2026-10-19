@@ -634,11 +634,14 @@ document.addEventListener('DOMContentLoaded', () => {
             #pdf-export-stage .doc-meta-row { display:flex !important; justify-content:space-between !important; align-items:center !important; padding:0 2px !important; }
             #pdf-export-stage .doc-meta-row .meta-item { display:flex !important; align-items:center !important; gap:6px !important; }
             #pdf-export-stage .doc-meta-row .meta-input { width:140px !important; padding:1px 4px !important; margin:0 !important; direction:rtl !important; text-align:right !important; font-family:var(--font-arabic),Tajawal,sans-serif !important; font-size:inherit !important; font-weight:700 !important; line-height:normal !important; }
-            /* Keep the Latin date digits in their natural order, with the Arabic suffix after them. */
-            #pdf-export-stage #quote-date { direction:ltr !important; text-align:right !important; unicode-bidi:plaintext !important; }
+            #pdf-export-stage .doc-meta-row #quote-date { display:none !important; }
+            #pdf-export-stage .doc-meta-row .quote-date-export { display:inline-block !important; width:140px !important; margin:0 !important; padding:1px 4px !important; direction:ltr !important; unicode-bidi:isolate !important; text-align:right !important; white-space:nowrap !important; font-family:var(--font-arabic),Tajawal,sans-serif !important; font-size:inherit !important; font-weight:700 !important; line-height:normal !important; }
+            #pdf-export-stage .terms-print-text { min-height:30px !important; height:auto !important; font-size:10px !important; line-height:1.2 !important; white-space:pre-wrap !important; overflow-wrap:anywhere !important; }
+            #pdf-export-stage .terms-print-text.ar-box { direction:rtl !important; text-align:right !important; }
+            #pdf-export-stage .terms-print-text.en-box { direction:ltr !important; text-align:left !important; unicode-bidi:plaintext !important; font-family:Arial,Tajawal,sans-serif !important; }
             #pdf-export-stage .table-select, #pdf-export-stage .car-type-select { appearance:none !important; -webkit-appearance:none !important; -moz-appearance:none !important; border:none !important; background:transparent !important; box-shadow:none !important; outline:none !important; color:#000 !important; text-align:center !important; text-align-last:center !important; width:100% !important; padding:0 !important; }
-            #pdf-export-stage .terms-box textarea { border:none !important; background:transparent !important; resize:none !important; outline:none !important; height:auto !important; min-height:60px !important; overflow:visible !important; white-space:pre-wrap !important; }
-            #pdf-export-stage .terms-print-text { height:auto !important; min-height:60px !important; overflow:visible !important; white-space:pre-wrap !important; overflow-wrap:anywhere !important; }
+            #pdf-export-stage .terms-box textarea { border:none !important; background:transparent !important; resize:none !important; outline:none !important; height:auto !important; min-height:30px !important; overflow:visible !important; white-space:pre-wrap !important; font-size:10px !important; line-height:1.2 !important; }
+            #pdf-export-stage .terms-print-text { height:auto !important; min-height:30px !important; overflow:visible !important; white-space:pre-wrap !important; overflow-wrap:anywhere !important; font-size:10px !important; line-height:1.2 !important; }
             #pdf-export-stage.pdf-export-stage-desktop .a4-page { height:296mm !important; min-height:296mm !important; max-height:296mm !important; }
             #pdf-export-stage.pdf-export-stage-desktop .table-select, #pdf-export-stage.pdf-export-stage-desktop .car-type-select { font-size:.74rem !important; font-weight:800 !important; color:#000 !important; }
             #pdf-export-stage.pdf-export-stage-desktop .terms-box textarea { background:transparent !important; }
@@ -754,6 +757,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const sourcePage = pages[i];
                 const clone = sourcePage.cloneNode(true);
                 syncFormValues(sourcePage, clone);
+                // Render the date as isolated LTR text so Arabic bidi rules cannot move "م" before the date.
+                const dateInput = clone.querySelector('#quote-date');
+                if (dateInput) {
+                    const dateText = document.createElement('span');
+                    dateText.className = 'quote-date-export';
+                    dateText.textContent = (sourcePage.querySelector('#quote-date')?.value || dateInput.value || '').replace(/\\s*م\\s*$/, '') + ' م';
+                    dateInput.replaceWith(dateText);
+                }
                 // Lock the company title to the page center in the actual export clone.
                 clone.querySelectorAll('.company-brand').forEach(brand => {
                     brand.style.setProperty('width', '100%', 'important');
