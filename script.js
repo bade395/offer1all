@@ -1281,29 +1281,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async function translateChunk(chunk) {
             if (chunk === '\n') return '\n';
-            const services = [
-                async () => {
+            // Use a same-origin Vercel endpoint first to avoid browser CORS/network restrictions.
+            try {
+                const response = await fetch('/api/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: chunk })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (response.ok && data && typeof data.translatedText === 'string' && data.translatedText.trim()) {
+                    return data.translatedText.trim();
+                }
+                throw new Error(data.error || 'Translation endpoint failed (' + response.status + ')');
+            } catch (proxyError) {
+                // Browser-side providers remain as a fallback if the server endpoint is unavailable.
+                try {
                     const response = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=' + encodeURIComponent(chunk));
                     if (!response.ok) throw new Error('Google translation unavailable (' + response.status + ')');
                     const data = await response.json();
                     const translated = data && Array.isArray(data[0]) ? data[0].map(item => item && item[0] || '').join('').trim() : '';
                     if (!translated) throw new Error('Google returned an empty translation');
                     return translated;
-                },
-                async () => {
+                } catch (googleError) {
                     const response = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(chunk) + '&langpair=ar%7Cen');
-                    if (!response.ok) throw new Error('MyMemory translation unavailable (' + response.status + ')');
+                    if (!response.ok) throw new Error('Translation failed. ' + (proxyError.message || '') + ' ' + (googleError.message || '') + ' MyMemory HTTP ' + response.status);
                     const data = await response.json();
                     const translated = data && data.responseData ? String(data.responseData.translatedText || '').trim() : '';
-                    if (!translated || /MYMEMORY WARNING/i.test(translated)) throw new Error('MyMemory returned no translation');
+                    if (!translated || /MYMEMORY WARNING/i.test(translated)) throw new Error('Translation services returned no translation. Check internet connection and try again.');
                     return translated;
                 }
-            ];
-            let lastError;
-            for (const service of services) {
-                try { return await service(); } catch (error) { lastError = error; }
             }
-            throw lastError || new Error('Translation services unavailable');
         }
 
         termsAr.addEventListener('input', () => {
