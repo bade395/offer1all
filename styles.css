@@ -720,6 +720,33 @@ body {
     padding: 0 2px;
 }
 
+/* Banking table: Arabic account labels on the right, their values on the left. */
+.bank-table {
+    direction: rtl !important;
+    table-layout: fixed;
+}
+.bank-table tr > .bank-label,
+.bank-table tr > td.bank-label {
+    text-align: right !important;
+    direction: rtl !important;
+}
+.bank-table tr > .bank-value,
+.bank-table tr > td.bank-value {
+    text-align: left !important;
+    direction: ltr;
+    unicode-bidi: plaintext;
+    overflow-wrap: anywhere;
+}
+#pdf-export-stage .bank-table {
+    direction: rtl !important;
+}
+#pdf-export-stage .bank-table .bank-label {
+    text-align: right !important;
+    direction: rtl !important;
+}
+#pdf-export-stage .bank-table .bank-value {
+    text-align: left !important;
+}
 .bank-table {
     border-collapse: collapse;
     width: 60%;
