@@ -788,6 +788,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     dateText.textContent = sourcePage.querySelector('#quote-date')?.value ?? dateInput.value ?? '';
                     dateInput.replaceWith(dateText);
                 }
+                // Render statement text as a normal wrapping block in the PDF only.
+                // Read typography from the live source field (not the detached clone) to preserve Arabic glyph shaping.
+                clone.querySelectorAll('textarea.statement-input').forEach((area, fieldIndex) => {
+                    const sourceField = sourcePage.querySelectorAll('textarea.statement-input')[fieldIndex];
+                    const sourceStyle = sourceField ? window.getComputedStyle(sourceField) : null;
+                    const replacement = document.createElement('div');
+                    replacement.className = 'statement-print-text';
+                    replacement.textContent = area.value || '';
+                    replacement.setAttribute('dir', sourceField?.getAttribute('dir') || 'rtl');
+                    replacement.style.cssText = [
+                        'display:block',
+                        'width:100%',
+                        'box-sizing:border-box',
+                        'min-height:22px',
+                        'height:auto',
+                        'overflow:visible',
+                        'white-space:pre-wrap',
+                        'overflow-wrap:anywhere',
+                        'word-break:normal',
+                        'direction:' + (sourceStyle?.direction || 'rtl'),
+                        'text-align:' + (sourceStyle?.textAlign || 'right'),
+                        'font-family:' + (sourceStyle?.fontFamily || 'Tajawal, Arial, sans-serif'),
+                        'font-size:' + (sourceStyle?.fontSize || 'inherit'),
+                        'font-weight:' + (sourceStyle?.fontWeight || '400'),
+                        'line-height:' + (sourceStyle?.lineHeight || '1.3'),
+                        'letter-spacing:' + (sourceStyle?.letterSpacing || 'normal'),
+                        'padding:' + (sourceStyle?.padding || '0 2px'),
+                        'color:#111',
+                        'background:transparent',
+                        'border:0'
+                    ].join(';') + ';';
+                    area.replaceWith(replacement);
+                });
+
                 // Lock the company title to the page center in the actual export clone.
                 clone.querySelectorAll('.company-brand').forEach(brand => {
                     brand.style.setProperty('width', '100%', 'important');
@@ -820,19 +854,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Recalculate each statement textarea after the export clone is attached and has its final width.
                 // This preserves every wrapped line and lets the table row grow to fit the full statement.
-                clone.querySelectorAll('textarea.statement-input').forEach(field => {
-                    field.style.setProperty('display', 'block', 'important');
-                    field.style.setProperty('box-sizing', 'border-box', 'important');
+                clone.querySelectorAll('.statement-print-text').forEach(field => {
                     field.style.setProperty('height', 'auto', 'important');
-                    field.style.setProperty('min-height', '0', 'important');
+                    field.style.setProperty('min-height', '22px', 'important');
                     field.style.setProperty('max-height', 'none', 'important');
-                    field.style.setProperty('overflow', 'hidden', 'important');
+                    field.style.setProperty('overflow', 'visible', 'important');
                     field.style.setProperty('white-space', 'pre-wrap', 'important');
                     field.style.setProperty('overflow-wrap', 'anywhere', 'important');
-                    field.style.setProperty('word-break', 'normal', 'important');
-                    field.style.setProperty('direction', window.getComputedStyle(field).direction, 'important');
-                    field.style.setProperty('font-family', window.getComputedStyle(sourcePage.querySelector('.statement-input') || field).fontFamily, 'important');
-                    field.style.setProperty('height', Math.max(22, field.scrollHeight + 4) + 'px', 'important');
                     const row = field.closest('tr');
                     if (row) {
                         row.style.setProperty('height', 'auto', 'important');
