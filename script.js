@@ -1242,14 +1242,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (termsAr && termsEn) {
-        // Break long notes into requests below the translation service's 500-character limit.
+        // Split long notes into requests below the translation service's 500-character limit.
         function splitTranslationText(text, maxLength = 450) {
             const chunks = [];
             let current = '';
-            const paragraphs = text.split(/\\n/);
-            for (let p = 0; p < paragraphs.length; p++) {
-                const paragraph = paragraphs[p];
-                const words = paragraph.match(/\\S+\\s*/g) || [];
+            const paragraphs = text.split(/(\r?\n)/);
+            for (const part of paragraphs) {
+                if (/^\r?\n$/.test(part)) {
+                    if (current.trim()) chunks.push(current.trimEnd());
+                    current = '';
+                    chunks.push('\n');
+                    continue;
+                }
+                const words = part.match(/\S+\s*/g) || [];
                 for (const word of words) {
                     if (current.length + word.length > maxLength && current.trim()) {
                         chunks.push(current.trimEnd());
@@ -1257,20 +1262,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     let remaining = word;
                     while (remaining.length > maxLength) {
-                        if (current.trim()) { chunks.push(current.trimEnd()); current = ''; }
+                        if (current.trim()) {
+                            chunks.push(current.trimEnd());
+                            current = '';
+                        }
                         chunks.push(remaining.slice(0, maxLength));
                         remaining = remaining.slice(maxLength);
                     }
                     current += remaining;
                 }
-                if (current.trim()) { chunks.push(current.trimEnd()); current = ''; }
-                if (p < paragraphs.length - 1) chunks.push('\\n');
+                if (current.trim()) {
+                    chunks.push(current.trimEnd());
+                    current = '';
+                }
             }
-            return chunks.filter(chunk => chunk === '\\n' || chunk.trim());
+            return chunks.filter(chunk => chunk === '\n' || chunk.trim());
         }
 
         async function translateChunk(chunk) {
-            if (chunk === '\\n') return '\\n';
+            if (chunk === '\n') return '\n';
             try {
                 const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=' + encodeURIComponent(chunk);
                 const response = await fetch(url);
@@ -1312,7 +1322,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             translatedChunks.push(await translateChunk(chunk));
                         }
                         if (requestId === latestTranslationRequest) {
-                            termsEn.value = translatedChunks.join(' ').replace(/\\s+\\n/g, '\\n').replace(/\\n\\s+/g, '\\n');
+                            termsEn.value = translatedChunks.join(' ').replace(/[ \t]*\n[ \t]*/g, '\n');
                             resizeTermsField(termsEn);
                             markQuoteDirty();
                         }
