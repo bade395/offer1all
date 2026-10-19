@@ -757,33 +757,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 area.replaceWith(replacement);
             });
 
-            // Replace statement textareas with real text blocks in the PDF clone.
-            // html2canvas can clip multiline textarea content even when its height is correct.
-            clone.querySelectorAll('.statement-input').forEach(area => {
-                const replacement = document.createElement('div');
-                const sourceStyle = window.getComputedStyle(area);
-                replacement.className = 'statement-print-text';
-                replacement.dir = area.dir || 'rtl';
-                replacement.lang = area.lang || 'ar';
-                replacement.textContent = area.value || '';
-                // Copy the exact live field typography so Arabic shaping stays identical to the on-screen field.
-                replacement.style.cssText = [
-                    'display:block','width:100%','box-sizing:border-box','min-height:22px','height:auto',
-                    'overflow:visible','white-space:pre-wrap','overflow-wrap:anywhere','word-break:normal',
-                    'direction:' + sourceStyle.direction,
-                    'unicode-bidi:plaintext',
-                    'text-align:' + sourceStyle.textAlign,
-                    'font-family:' + sourceStyle.fontFamily,
-                    'font-size:' + sourceStyle.fontSize,
-                    'font-weight:' + sourceStyle.fontWeight,
-                    'font-style:' + sourceStyle.fontStyle,
-                    'line-height:' + sourceStyle.lineHeight,
-                    'letter-spacing:' + sourceStyle.letterSpacing,
-                    'padding:' + sourceStyle.padding,
-                    'color:#111','background:transparent','border:0'
-                ].join(';') + ';';
-                area.replaceWith(replacement);
-            });
+            // Keep statement fields as native textareas in the export clone. This preserves the
+            // browser's exact Arabic shaping and bidi rendering from the entry screen.
+            // Their heights are expanded after the clone is attached below, before html2canvas runs.
         };
 
         try {
@@ -844,13 +820,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Recalculate each statement textarea after the export clone is attached and has its final width.
                 // This preserves every wrapped line and lets the table row grow to fit the full statement.
-                clone.querySelectorAll('.statement-print-text').forEach(field => {
+                clone.querySelectorAll('textarea.statement-input').forEach(field => {
+                    field.style.setProperty('display', 'block', 'important');
+                    field.style.setProperty('box-sizing', 'border-box', 'important');
                     field.style.setProperty('height', 'auto', 'important');
-                    field.style.setProperty('min-height', '22px', 'important');
-                    field.style.setProperty('overflow', 'visible', 'important');
+                    field.style.setProperty('min-height', '0', 'important');
+                    field.style.setProperty('max-height', 'none', 'important');
+                    field.style.setProperty('overflow', 'hidden', 'important');
                     field.style.setProperty('white-space', 'pre-wrap', 'important');
                     field.style.setProperty('overflow-wrap', 'anywhere', 'important');
                     field.style.setProperty('word-break', 'normal', 'important');
+                    field.style.setProperty('direction', window.getComputedStyle(field).direction, 'important');
+                    field.style.setProperty('font-family', window.getComputedStyle(sourcePage.querySelector('.statement-input') || field).fontFamily, 'important');
+                    field.style.setProperty('height', Math.max(22, field.scrollHeight + 4) + 'px', 'important');
                     const row = field.closest('tr');
                     if (row) {
                         row.style.setProperty('height', 'auto', 'important');
