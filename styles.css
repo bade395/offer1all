@@ -198,15 +198,18 @@ body {
 }
 
 .company-title {
+    display: block;
+    width: 100%;
     font-family: var(--font-arabic) !important;
     font-size: 2.15rem;
     font-weight: 900;
     color: var(--primary-blue);
     line-height: 1.2;
-    margin-bottom: 2px;
+    margin: 0 auto 2px;
     letter-spacing: normal !important;
     direction: rtl;
-    text-align: center;
+    text-align: center !important;
+    text-align-last: center !important;
 }
 
 .company-sub {
@@ -1104,6 +1107,44 @@ body.rendering-pdf .a4-page {
     overflow-wrap: anywhere;
     line-height: 1.3;
 }
+/* Keep the company name centered even while editing or exporting. */
+.company-brand {
+    width: 100%;
+    min-width: 0;
+    text-align: center !important;
+}
+.company-brand .company-title,
+.company-brand input.company-title,
+.company-brand [contenteditable="true"].company-title {
+    display: block;
+    width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    text-align: center !important;
+    text-align-last: center !important;
+}
+
+/* Arabic terms must use an Arabic-capable font and connected-script shaping. */
+.terms-box textarea,
+.terms-print-text {
+    font-family: 'Tajawal', Arial, sans-serif !important;
+    font-kerning: normal;
+    font-variant-ligatures: normal;
+    letter-spacing: normal !important;
+    word-spacing: normal;
+    unicode-bidi: plaintext;
+}
+#pdf-export-stage .terms-print-text {
+    font-family: 'Tajawal', Arial, sans-serif !important;
+    direction: rtl;
+    unicode-bidi: plaintext;
+    text-align: right;
+    letter-spacing: normal !important;
+    line-height: 1.5 !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+}
+
 .terms-print-text {
     display: block;
     height: auto;
