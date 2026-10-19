@@ -644,7 +644,8 @@ document.addEventListener('DOMContentLoaded', () => {
             #pdf-export-stage .no-print, #pdf-export-stage .btn-toggle-select, #pdf-export-stage .row-action-col { display:none !important; }
             #pdf-export-stage .editable-field { border:none !important; border-color:transparent !important; background:transparent !important; box-shadow:none !important; outline:none !important; padding:0 !important; }
             #pdf-export-stage .table-select, #pdf-export-stage .car-type-select { appearance:none !important; -webkit-appearance:none !important; -moz-appearance:none !important; border:none !important; background:transparent !important; box-shadow:none !important; outline:none !important; color:#000 !important; text-align:center !important; text-align-last:center !important; width:100% !important; padding:0 !important; }
-            #pdf-export-stage .terms-box textarea { border:none !important; background:transparent !important; resize:none !important; outline:none !important; }
+            #pdf-export-stage .terms-box textarea { border:none !important; background:transparent !important; resize:none !important; outline:none !important; height:auto !important; min-height:60px !important; overflow:visible !important; white-space:pre-wrap !important; }
+            #pdf-export-stage .terms-print-text { height:auto !important; min-height:60px !important; overflow:visible !important; white-space:pre-wrap !important; overflow-wrap:anywhere !important; }
             #pdf-export-stage.pdf-export-stage-desktop .a4-page { height:296mm !important; min-height:296mm !important; max-height:296mm !important; }
             #pdf-export-stage.pdf-export-stage-desktop .table-select, #pdf-export-stage.pdf-export-stage-desktop .car-type-select { font-size:.74rem !important; font-weight:800 !important; color:#000 !important; }
             #pdf-export-stage.pdf-export-stage-desktop .terms-box textarea { background:transparent !important; }
@@ -673,6 +674,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (field.tagName === 'TEXTAREA') {
                     target.value = field.value;
                     target.textContent = field.value;
+                    target.style.height = 'auto';
+                    target.style.height = Math.max(field.id.startsWith('terms-') ? 60 : 42, target.scrollHeight) + 'px';
                 } else if (field.tagName === 'SELECT') {
                     Array.from(target.options).forEach(option => option.selected = option.value === field.value);
                     target.setAttribute('data-pdf-value', field.value);
@@ -680,6 +683,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     target.value = field.value;
                     target.setAttribute('value', field.value);
                 }
+            });
+
+            // html2canvas may clip native textarea contents. Render terms as styled text blocks in the PDF clone.
+            clone.querySelectorAll('#terms-ar, #terms-en').forEach(area => {
+                const replacement = document.createElement('div');
+                replacement.className = area.id === 'terms-ar' ? 'terms-print-text ar-box' : 'terms-print-text en-box';
+                replacement.textContent = area.value || '';
+                replacement.dir = area.id === 'terms-ar' ? 'rtl' : 'ltr';
+                replacement.style.cssText = 'display:block;width:100%;min-height:60px;height:auto;box-sizing:border-box;white-space:pre-wrap;overflow:visible;overflow-wrap:anywhere;font-size:0.75rem;line-height:1.3;padding:4px;text-align:' + (area.id === 'terms-ar' ? 'right' : 'left') + ';font-family:inherit;color:#111;background:transparent;border:0;';
+                area.replaceWith(replacement);
             });
         };
 
@@ -1076,31 +1089,55 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnExportPdfMobile) btnExportPdfMobile.addEventListener('click', () => handlePdfExport('mobile', btnExportPdfMobile));
     if (btnExportPdfDesktop) btnExportPdfDesktop.addEventListener('click', () => handlePdfExport('desktop', btnExportPdfDesktop));
 
-    // الترجمة التلقائية لمربع الملاحظات والشروط
+    // الترجمة التلقائية مع تمدد الحقول حسب عدد السطور
     const termsAr = document.getElementById('terms-ar');
     const termsEn = document.getElementById('terms-en');
     let translateTimeout;
+    let latestTranslationRequest = 0;
+
+    function resizeTermsField(field) {
+        if (!field) return;
+        field.style.height = 'auto';
+        field.style.height = Math.max(60, field.scrollHeight) + 'px';
+    }
 
     if (termsAr && termsEn) {
         termsAr.addEventListener('input', () => {
+            resizeTermsField(termsAr);
             clearTimeout(translateTimeout);
             const text = termsAr.value.trim();
+            const requestId = ++latestTranslationRequest;
             if (!text) {
                 termsEn.value = '';
+                resizeTermsField(termsEn);
                 return;
             }
 
             translateTimeout = setTimeout(() => {
                 fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(text)}`)
-                    .then(res => res.json())
+                    .then(res => {
+                        if (!res.ok) throw new Error('Translation service unavailable');
+                        return res.json();
+                    })
                     .then(data => {
+                        if (requestId !== latestTranslationRequest) return;
                         if (data && data[0]) {
                             termsEn.value = data[0].map(item => item[0]).join('');
+                            resizeTermsField(termsEn);
+                            termsEn.dispatchEvent(new Event('input', { bubbles: true }));
                         }
                     })
                     .catch(err => console.error('Translation error:', err));
             }, 500);
         });
+
+        termsEn.addEventListener('input', () => resizeTermsField(termsEn));
+        window.addEventListener('beforeprint', () => {
+            resizeTermsField(termsAr);
+            resizeTermsField(termsEn);
+        });
+        resizeTermsField(termsAr);
+        resizeTermsField(termsEn);
     }
 
     generateAutoMeta();
