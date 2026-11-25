@@ -835,10 +835,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     ctx.font = font;
                     const maxWidth = logicalWidth - pad * 2;
                     const lines = [];
-                    value.split(/\\r?\\n/).forEach(paragraph => {
+                    value.split(/\r?\n/).forEach(paragraph => {
                         if (!paragraph) { lines.push(''); return; }
                         let line = '';
-                        paragraph.split(/\\s+/).forEach(word => {
+                        paragraph.split(/\s+/).forEach(word => {
                             const candidate = line ? line + ' ' + word : word;
                             if (line && ctx.measureText(candidate).width > maxWidth) {
                                 lines.push(line); line = word;
