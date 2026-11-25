@@ -825,6 +825,25 @@ body {
     align-items: center;
 }
 
+.footer-phone-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    direction: ltr;
+}
+
+.footer-phone-input {
+    width: 86px;
+    min-width: 0;
+    text-align: center;
+    direction: ltr;
+    unicode-bidi: isolate;
+    font-family: Arial, sans-serif !important;
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+}
+
 .footer-sep {
     width: 1px;
     height: 12px;
